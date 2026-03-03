@@ -1,53 +1,91 @@
-# Autonomous Car Simulator
+# AUTOCAR — Autonomous Car Simulator
 
-This workspace contains a simple CPU‑only car simulator built with
-`pygame`. The vehicle follows a straight road and must avoid randomly
-placed obstacles using a combination of **reinforcement learning (Q‑learning)**
-and a lightweight **model predictive controller (MPC)** fallback.
+A simple, educational Python project demonstrating a **Model Predictive
+Controller (MPC)** navigating a multi‑lane highway. All logic is contained
+in `main.py`, making the code easy to read, modify, and extend for
+experiments with planning, control, and traffic interactions.
 
-## Features
+## 🚗 About the Simulation
 
-* Car kinematic model (bicycle model) with steering constraints.
-* A **curved lane** defined by a sinusoidal centerline; boundaries are
-  drawn and the car is physically constrained so it cannot leave the
-  lane during simulation.
-* Obstacles spawn relative to the current lane center rather than a
-  fixed straight line.
-* Camera offset keeps the vehicle near the left edge of the window.
-* MPC sampler that evaluates candidate steering angles over a short
-  horizon and penalises collisions, lane deviation, or approaching the
-  boundary. This controller is used at runtime to plan and follow the
-  lane; it guarantees trajectory planning independent of the RL agent.
-* (Optional) RL agent with discretized states is trained offline but
-  currently not used in the live simulation — it can be enabled later
-  for experimentation.
-* Training loop runs at startup; epsilon is decayed and you can adjust
-  `TRAIN_EPISODES`/`max_steps` in `main.py` for more thorough learning.
+`main.py` creates a real‑time view of an ego vehicle (green) traveling
+on a three‑lane road. Surrounding traffic is randomly spawned and moves
+relative to the ego car’s frame. The controller consists of two MPC
+routines:
 
-## Running
+1. **Longitudinal MPC** — keeps the ego car close to a target speed and
+   maintains a safe gap to the lead vehicle, with comfort penalties for
+   acceleration and jerk.
+2. **Lateral MPC** — performs smooth lane tracking and lane changes while
+   respecting lateral acceleration limits.
 
-Activate your virtual environment and run:
+Additional logic automatically initiates lane changes when a slower car
+appears ahead, provided the adjacent lane is clear. Acceleration and
+jerk are plotted live using `matplotlib`.
+
+## ✨ Key Features
+
+- CPU‑only implementation using `pygame` for graphics and `cvxpy`/`OSQP`
+  as the solver
+- Configurable highway with 3 lanes and adjustable dimensions
+- Dynamic traffic spawn and simple kinematic model for other vehicles
+- Safety circle visualisation around ego car
+- HUD displaying speed, acceleration, current/target lane, and gap
+- Tuning constants at the top of `main.py` allow easy experimentation
+
+## 🛠 Requirements
+
+- Python 3.10 or newer (works on Windows, macOS, Linux)
+- Python packages listed in `pyproject.toml`:
+  `pygame`, `cvxpy`, `numpy`, `matplotlib`
+
+## ⚡ Setup
 
 ```powershell
-& .\.venv\Scripts\Activate.ps1
+python -m venv .venv
+& .\.venv\Scripts\Activate.ps1   # Windows
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## ▶️ Running
+
+```powershell
 python main.py
 ```
 
-The program will print training progress in the terminal and then open
-a window showing the curving lane and the car driving through the
-obstacle field. The simulation **will automatically stop** if the car
-bumps an obstacle or wanders outside the lane; you can also close the
-window or hit the close button to exit manually.
+After launching, a window displays the highway. The ego car uses MPC to
+maneuver; close the window or press **ESC** to quit.
 
-## Customization
+## ⚙️ Configuration
 
-* Adjust `OBS_COUNT`, `HORIZON`, and `STEER_ACTIONS` in `main.py` for
-  more obstacles, longer planning horizon, or finer steering resolution.
-* You can comment out the training section to reuse a previously
-  learned `rl_agent.q` table (add serialization yourself if desired).
-* Replace the Q‑learning agent with a neural network for a deeper RL
-  setup, or integrate a proper MPC solver (CVXOPT, OSQP, etc.).
+Open `main.py` and modify constants near the top:
+
+- `WIDTH`, `HEIGHT`, `FPS` – rendering parameters
+- `DT`, `HORIZON` – time step and MPC horizon
+- `LANES`, `LANE_Y` – lane count and vertical positions
+- `V_TARGET`, `D_SAFE`, `A_MIN`, `A_MAX` – speed/distance/acceleration
+  thresholds
+- `LAT_ACC_MAX` – lateral acceleration cap
+- `SPAWN_COOLDOWN` – spacing between new traffic vehicles
+- `PLOT_EVERY` – how often the acceleration/jerk plots update
+
+Values are treated in a 1‑pixel = 1‑meter scale to keep the math simple.
+
+## 🧩 Development & Extensions
+
+- Break `main.py` into modules (e.g. controllers, models, visualization)
+- Add longitudinal control terms (braking, fuel efficiency, comfort)
+- Swap in a different solver or LP/QP formulation
+- Implement reinforcement learning or save replay data
+- Capture video frames or add a simple web UI
+
+## 🤝 Contributing
+
+Bug reports, enhancements, and pull requests are welcome. The project
+originated as a teaching demo; keep the code clear and well‑documented. An
+MIT or other permissive license is recommended if sharing publicly.
 
 ---
 
-Feel free to experiment!
+Have fun experimenting with MPC on the highway! 🚦
+
